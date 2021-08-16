@@ -6,6 +6,7 @@ let
     });
   pinned = builtins.fetchGit {
     # Descriptive name to make the store path easier to identify
+    name = "nixos-unstable-2020-04-26";
     url = "https://github.com/nixos/nixpkgs/";
     # Commit hash for nixos-unstable as of 2020-04-26
     # `git ls-remote https://github.com/nixos/nixpkgs nixos-unstable`
@@ -13,23 +14,20 @@ let
     rev = "1fe6ed37fd9beb92afe90671c0c2a662a03463dd";
   };
   nixpkgs = import pinned { overlays = [ mozillaOverlay ]; };
-  toolchain = with nixpkgs; (rustChannelOf { date = "2021-03-01"; channel = "nightly"; });
-  rust-wasm = toolchain.rust.override {
+  rust-nightly = with nixpkgs; ((rustChannelOf { date = "2021-03-01"; channel = "nightly"; }).rust.override {
     targets = [ "wasm32-unknown-unknown" ];
-  };
+  });
 in
 with nixpkgs; pkgs.mkShell {
   buildInputs = [
     clang
     pkg-config
-    rust-wasm
+    rust-nightly
   ] ++ stdenv.lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
   ];
 
   LIBCLANG_PATH = "${llvmPackages.libclang}/lib";
   PROTOC = "${protobuf}/bin/protoc";
-  RUST_SRC_PATH = "${toolchain.rust-src}/lib/rustlib/src/rust/library/";
   ROCKSDB_LIB_DIR = "${rocksdb}/lib";
-
 }
